@@ -1,7 +1,7 @@
 //! Simple tool to resolve and writeback depfile paths
 
 use std::env::{Args, args};
-use std::fs::read_to_string;
+use std::fs::{read_to_string, write};
 use std::iter::Skip;
 use std::path::Path;
 use std::process::exit;
@@ -124,23 +124,38 @@ fn main() {
         exit(1);
     }
 
-    println!(r#"{}: \"#, depfile_target);
+    let mut buffer: Vec<u8> = Vec::new();
+
+    let new_target = format!("{}: \\\n", depfile_target);
+    if verbose {
+        println!("{}", new_target);
+    }
+    buffer.extend(new_target.as_bytes().iter());
 
     for depfile_part in depfile_contents_iter {
+
         if depfile_part == r#"\"# {
             continue;
         }
 
         let depfile_part_path: &Path = Path::new(depfile_part);
         if depfile_part_path.is_absolute() {
-            println!(r#"    {} \"#, depfile_part);
+            let part: String = format!("    {} \\\n", depfile_part);
+            if verbose {
+                println!("{}", part);
+            }
+            buffer.extend(part.as_bytes().iter());
             continue;
         }
 
         let depfile_part_resolved = dir_path.join(depfile_part_path).canonicalize();
         match depfile_part_resolved {
             Ok(path) => {
-                println!(r#"    {} \"#, path.display());
+                let part: String = format!("    {} \\\n", path.display());
+                if verbose {
+                    println!("{}", part);
+                }
+                buffer.extend(part.as_bytes().iter());
                 continue;
             },
             Err(err) => {
@@ -151,5 +166,6 @@ fn main() {
 
     }
 
+    let _ = write(depfile_string, buffer).expect("error: failure to write back file");
 
 }
