@@ -2,7 +2,15 @@
 name = "absdepfile"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.70"
+authors = ["Seth Junot"]
+license = "GPL-3.0-only"
+description = "Simple tool to resolve and writeback depfile paths"
+categories = ["command-line-utilities"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+[profile.release]
+codegen-units = 1
+debug = false
+lto = true
+panic = "abort"
+opt-level = "z"
